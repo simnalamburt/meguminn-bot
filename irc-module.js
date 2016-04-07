@@ -1,7 +1,8 @@
 'use strict';
 
 const fs = require('fs');
-const Promise = require('bluebird');
+const vm = require('vm');
+const bluebird = require('bluebird');
 
 class IrcModuleBase {
   constructor(name, option) {
@@ -77,6 +78,21 @@ class ModuleManager {
     this.paths = {};
     this.enable_table = {};
     this.chain = [];
+
+    this.sandbox = {
+      ModuleBase: IrcModuleBase,
+      console: console,
+      setTimeout: setTimeout,
+      clearTimeout: clearTimeout,
+      setInterval: setInterval,
+      clearInterval: clearInterval,
+      process: process,
+      require: require,
+      require_module: path => {
+        return require(`./irc_modules/${path}`);
+      },
+    };
+    vm.createContext(this.sandbox);
   }
 
   add(name, module, enabled) {
@@ -86,16 +102,11 @@ class ModuleManager {
     this.chain.push(name);
   }
   load(path, enabled) {
-    Promise.promisify(fs.readFile)(`./irc_modules/${path}`).then((body) => {
-      const moduleClass = (() => {
-        let ircModule;
-        const ModuleBase = IrcModuleBase;
-        const require_module = (path) => {
-          return require(`./irc_modules/${path}`);
-        };
-        eval(body.toString());
-        return ircModule;
-      })();
+    const file = `./irc_modules/${path}`;
+    bluebird.promisify(fs.readFile)(file).then((body) => {
+      const moduleClass = vm.runInContext(body.toString(), this.sandbox, {
+        filename: file
+      });
       let moduleInstance = new moduleClass();
       moduleInstance.chain(this, enabled);
       this.paths[moduleInstance.name] = path;

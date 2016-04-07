@@ -152,5 +152,3 @@ class Meguminn extends ModuleBase {
     return date.getHours() >= 22 || date.getHours() < 7;
   }
 };
-
-ircModule = Meguminn;
