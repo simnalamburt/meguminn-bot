@@ -78,21 +78,6 @@ class ModuleManager {
     this.paths = {};
     this.enable_table = {};
     this.chain = [];
-
-    this.sandbox = {
-      ModuleBase: IrcModuleBase,
-      console: console,
-      setTimeout: setTimeout,
-      clearTimeout: clearTimeout,
-      setInterval: setInterval,
-      clearInterval: clearInterval,
-      process: process,
-      require: require,
-      require_module: path => {
-        return require(`./irc_modules/${path}`);
-      },
-    };
-    vm.createContext(this.sandbox);
   }
 
   add(name, module, enabled) {
@@ -104,7 +89,19 @@ class ModuleManager {
   load(path, enabled) {
     const file = `./irc_modules/${path}`;
     bluebird.promisify(fs.readFile)(file).then((body) => {
-      const moduleClass = vm.runInContext(body.toString(), this.sandbox, {
+      const moduleClass = vm.runInNewContext(body.toString(), {
+        ModuleBase: IrcModuleBase,
+        console: console,
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        setInterval: setInterval,
+        clearInterval: clearInterval,
+        process: process,
+        require: require,
+        require_module: path => {
+          return require(`./irc_modules/${path}`);
+        },
+      }, {
         filename: file
       });
       let moduleInstance = new moduleClass();
