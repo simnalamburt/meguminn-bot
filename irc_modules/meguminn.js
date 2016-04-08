@@ -33,6 +33,7 @@ class Meguminn extends ModuleBase {
     let type;
     let test = true;
     if (text.includes("!폭렬")) type = "explosion";
+    else if (text.includes("#메구밍")) type = "meguminn";
     else if (text.includes("!메구밍")) type = "meguminn";
     else test = false;
     if (!this.ready) test = false;
