@@ -27,6 +27,7 @@ bot.on('message', (nick, to, text, message) => {
 bot.on('connect', () => {
   bot.join('#botworld');
   bot.join('#snucse16');
+  bot.join('#upnl');
   rl.prompt();
 });
 
