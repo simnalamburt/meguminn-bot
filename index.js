@@ -12,7 +12,8 @@ rl.setPrompt("> ");
 
 const bot = new IRCBot(
   "real.uriirc.org", 16664,
-  "메구밍", "Meguminn", "Meguminn bot by VBChunguk"
+  "메구밍", "Meguminn", "Meguminn bot by VBChunguk",
+  "Meguminn"
 );
 
 bot.loadModule([

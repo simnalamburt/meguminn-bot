@@ -6,8 +6,9 @@ const Module = require('./irc-module.js');
 const EventEmitter = require('events');
 
 class IRCBot extends EventEmitter {
-  constructor(host, port, nick, username, realname) {
+  constructor(host, port, nick, username, realname, processname) {
     super();
+    if (processname == null) process.title = processname;
     const opt = {
       host: host,
       port: port,
