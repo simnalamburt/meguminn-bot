@@ -12,9 +12,16 @@ class Meguminn extends ModuleBase {
       type: 'custom',
     });
     this.onExplosionTable = {};
+    this.lastCallTable = {
+      meguminn: 0,
+      explosion: 0
+    };
     this.introduction = [
       '내 이름은 메구밍! 아크 위저드를 생업으로 삼고 있으며, 최강의 공격마법, 폭렬마법을 펼치는 자!',
       '내 이름은 메구밍! 아크 위저드이자, 폭렬마법을 펼치는 자!'
+    ];
+    this.introductionSecond = [
+      '어이, 내 이름에 불만이 있으면 한번 말해 봐라.'
     ];
     this.ready = false;
     bluebird.promisify(fs.access)('last_explosion').then(() => {
@@ -49,6 +56,7 @@ class Meguminn extends ModuleBase {
     let lastExplosion = this.lastExplosionTable[channel];
     if (onExplosion) return;
     let currentTime = new Date();
+    const secondCall = this._isSecondCall(this.lastCallTable[args], currentTime);
     switch (args) {
       case "explosion":
         if (this._isSleeping(currentTime)) {
@@ -57,7 +65,8 @@ class Meguminn extends ModuleBase {
         }
         if (!this._isExplodable(lastExplosion, currentTime)) {
           if (this._canRespond(lastExplosion, currentTime)) {
-            sender.send('마력이 부족해요.');
+            if (secondCall) sender.send('폭렬마법은 제 한계까지 마력을 쓰기 때문에 하루에 한 번만 쓸 수 있어요.');
+            else sender.send('마력이 부족해요.');
           } else {
             sender.send('으으...');
           }
@@ -109,28 +118,22 @@ class Meguminn extends ModuleBase {
           sender.send('으으...');
           break;
         }
-        bluebird.promisify(crypto.randomBytes)(this.introduction.length + 1)
+        let usingIntroduction;
+        if (secondCall) usingIntroduction = this.introductionSecond;
+        else usingIntroduction = this.introduction;
+        bluebird.promisify(crypto.randomBytes)(usingIntroduction.length + 1)
         .then((bytes) => {
           let total = 0;
-          for (let i = 0; i < this.introduction.length; i++) total += bytes[i];
-          total %= this.introduction.length;
-          sender.send(this.introduction[total]);
-          if (bytes[this.introduction.length] % 4 == 0) {
-            return new Promise((resolve, reject) => {
-              setTimeout(resolve.bind(this, 1));
-            });
-          } else {
-            return new Promise((resolve, reject) => {
-              resolve(null);
-            });
-          }
-        }).then((result) => {
+          for (let i = 0; i < usingIntroduction.length; i++) total += bytes[i];
+          total %= usingIntroduction.length;
+          sender.send(usingIntroduction[total]);
         }).catch((err) => {
           console.error(err);
           sender.send('[ERR] 자기소개 시도 중 오류가 발생했습니다.');
         });
         break;
     }
+    this.lastCallTable[args] = currentTime.getTime();
   }
 
   _isExplodable(b, date) {
@@ -147,6 +150,14 @@ class Meguminn extends ModuleBase {
     let range = new Date(lastExplosion);
     range.setHours(range.getHours() + 1);
     return range.getTime() <= date.getTime();
+  }
+
+  _isSecondCall(b, date) {
+    let lastCall = b && new Date(b);
+    if (lastCall === undefined) return false;
+    let range = new Date(lastCall);
+    range.setSeconds(range.getSeconds() + 10);
+    return range.getTime() > date.getTime();
   }
 
   _isSleeping(date) {
