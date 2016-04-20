@@ -9,33 +9,53 @@ class IRCBot extends EventEmitter {
   constructor(host, port, nick, username, realname, processname) {
     super();
     if (processname == null) process.title = processname;
-    const opt = {
+    this.opt = {
       host: host,
       port: port,
       rejectUnauthorized: false,
     };
+    this.defaultNick = nick;
+    this.username = username;
+    this.realname = realname;
     this.manager = new Module.ModuleManager();
-    this.socket = tls.connect(opt, () => {
-      console.log('*** Client connected to server');
+    this.isQuit = false;
+    this.connect();
+  }
+
+  join(channel) {
+    this.client.join(channel);
+  }
+  connect() {
+    this.socket = tls.connect(this.opt, () => {
       this.client = slate(this.socket);
       this.client.use(Module.plugin(this.manager));
       this.client.on('message', (nick, to, text, message) => {
         this.emit('message', nick, to, text, message);
       }).on('errors', (err) => {
         this.emit('error', err);
+      }).on('disconnect', () => {
+        this.emit('disconnect');
+        // Reconnect if not explicitly disconnected
+        if (!this.isQuit) {
+          console.log('*** Disconnected, retry...');
+          this.connect();
+        }
       });
 
-      this.client.nick(nick);
-      this.client.user(username, realname);
+      console.log('*** Client connected to server');
+      this.client.nick(this.defaultNick);
+      this.client.user(this.username, this.realname);
       this.emit('connect');
     });
-  }
-
-  join(channel) {
-    this.client.join(channel);
+    this.socket.on('error', e => {
+      console.error(e.stack);
+      console.log('*** Error occured, retry...');
+      this.connect();
+    });
   }
   disconnect(message) {
-    return new Promise((resolve, reject) => {
+    this.isQuit = true;
+    return new Promise(resolve => {
       this.socket.on('end', () => {
         resolve();
       });
