@@ -1,7 +1,7 @@
 'use strict';
 
 const tls = require('tls');
-const slate = require('slate-irc');
+const qb = require('qbirc');
 const Module = require('./irc-module.js');
 const EventEmitter = require('events');
 
@@ -27,7 +27,7 @@ class IRCBot extends EventEmitter {
   }
   connect() {
     this.socket = tls.connect(this.opt, () => {
-      this.client = slate(this.socket);
+      this.client = qb(this.socket);
       this.client.use(Module.plugin(this.manager));
       this.client.on('message', (nick, to, text, message) => {
         this.emit('message', nick, to, text, message);

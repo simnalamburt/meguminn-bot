@@ -11,6 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.2.1",
-    "slate-irc": "simnalamburt/qbirc"
+    "qbirc": "^0.9.0"
   }
 }
