@@ -1,7 +1,7 @@
 'use strict';
 
 const tls = require('tls');
-const qb = require('qbirc');
+const qb = require('slate-irc');
 const Module = require('./irc-module.js');
 const EventEmitter = require('events');
 
